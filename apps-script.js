@@ -59,6 +59,7 @@ var HEADERS = [
     'Plan',
     'Batch',
     'Amount (₹)',
+    'Razorpay Payment ID',
     'Status',
 ];
 
@@ -80,6 +81,7 @@ function doPost(e) {
             sheet.setColumnWidth(3, 200); /* Email */
             sheet.setColumnWidth(5, 280); /* Plan */
             sheet.setColumnWidth(6, 220); /* Batch */
+            sheet.setColumnWidth(8, 200); /* Payment ID */
         }
 
         var data = JSON.parse(e.postData.contents);
@@ -92,13 +94,14 @@ function doPost(e) {
 
         sheet.appendRow([
             timestamp,
-            data.name   || '',
-            data.email  || '',
-            data.phone  || '',
-            data.plan   || '',
-            data.batch  || '',
-            data.amount || '',
-            'Payment Declared',
+            data.name       || '',
+            data.email      || '',
+            data.phone      || '',
+            data.plan       || '',
+            data.batch      || '',
+            data.amount     || '',
+            data.payment_id || '',
+            'Payment Confirmed',
         ]);
 
         /* Alternate row shading for readability */
