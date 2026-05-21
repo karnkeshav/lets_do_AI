@@ -84,7 +84,19 @@ function doPost(e) {
             sheet.setColumnWidth(8, 200); /* Payment ID */
         }
 
-        var data = JSON.parse(e.postData.contents);
+        // Data arrives as application/x-www-form-urlencoded (sent by URLSearchParams
+        // on the frontend). Read individual fields from e.parameter — do NOT
+        // try to JSON.parse e.postData.contents, that was the matching bug here.
+        var data = {
+            name:       e.parameter.name       || '',
+            email:      e.parameter.email      || '',
+            phone:      e.parameter.phone      || '',
+            plan:       e.parameter.plan       || '',
+            batch:      e.parameter.batch      || '',
+            amount:     e.parameter.amount     || '',
+            payment_id: e.parameter.payment_id || '',
+            timestamp:  e.parameter.timestamp  || '',
+        };
 
         var timestamp = Utilities.formatDate(
             new Date(),
