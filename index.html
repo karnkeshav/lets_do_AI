@@ -1,0 +1,1019 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>AI for EveryOne – Live AI Workshop</title>
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        :root {
+            --bg: #06060f;
+            --card: #0d0d1f;
+            --card-hover: #111128;
+            --purple: #8B5CF6;
+            --teal: #10B981;
+            --orange: #F59E0B;
+            --blue: #3B82F6;
+            --indigo: #6366F1;
+            --text: #F9FAFB;
+            --muted: #9CA3AF;
+            --border: rgba(255,255,255,0.08);
+            --radius: 16px;
+        }
+
+        body {
+            background: var(--bg);
+            color: var(--text);
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', system-ui, sans-serif;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* ── Steps ── */
+        .step { display: none; }
+        .step.active { display: block; animation: fadeIn 0.3s ease; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+
+        /* ── Container ── */
+        .container {
+            max-width: 480px;
+            margin: 0 auto;
+            padding: 24px 20px 48px;
+        }
+
+        /* ── Hero ── */
+        .hero {
+            min-height: 100vh;
+            background:
+                radial-gradient(ellipse at 15% 50%, rgba(99,102,241,0.18) 0%, transparent 55%),
+                radial-gradient(ellipse at 85% 20%, rgba(139,92,246,0.14) 0%, transparent 50%),
+                radial-gradient(ellipse at 50% 90%, rgba(59,130,246,0.1) 0%, transparent 50%),
+                linear-gradient(180deg, #06060f 0%, #0b0b22 100%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 60px 24px 80px;
+        }
+
+        .hero-label {
+            display: inline-block;
+            background: rgba(59,130,246,0.12);
+            border: 1px solid rgba(59,130,246,0.35);
+            color: #60A5FA;
+            font-size: 13px;
+            font-weight: 700;
+            padding: 6px 18px;
+            border-radius: 50px;
+            margin-bottom: 28px;
+            letter-spacing: 0.8px;
+            text-transform: uppercase;
+        }
+
+        .hero h1 {
+            font-size: clamp(52px, 14vw, 80px);
+            font-weight: 900;
+            line-height: 1.02;
+            margin-bottom: 20px;
+            letter-spacing: -1px;
+        }
+
+        .hero h1 .accent { color: var(--blue); }
+
+        .hero-sub {
+            font-size: 17px;
+            color: var(--muted);
+            max-width: 300px;
+            line-height: 1.65;
+            margin-bottom: 32px;
+        }
+
+        .offer-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(249,115,22,0.1);
+            border: 1px solid rgba(249,115,22,0.35);
+            color: #FB923C;
+            font-weight: 700;
+            font-size: 14px;
+            padding: 9px 22px;
+            border-radius: 50px;
+            margin-bottom: 36px;
+        }
+
+        .hero-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            width: 100%;
+            max-width: 320px;
+        }
+
+        /* ── Buttons ── */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 16px 32px;
+            border-radius: 50px;
+            border: none;
+            font-size: 16px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s;
+            width: 100%;
+            letter-spacing: 0.3px;
+            text-decoration: none;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #3B82F6, #6366F1);
+            color: white;
+            box-shadow: 0 4px 24px rgba(99,102,241,0.45);
+        }
+        .btn-primary:hover  { transform: translateY(-2px); box-shadow: 0 8px 32px rgba(99,102,241,0.55); }
+        .btn-primary:active { transform: translateY(0); }
+
+        .btn-outline {
+            background: transparent;
+            border: 2px solid rgba(255,255,255,0.15);
+            color: var(--muted);
+        }
+        .btn-outline:hover { border-color: var(--blue); color: #60A5FA; }
+
+        .btn-success {
+            background: linear-gradient(135deg, #10B981, #059669);
+            color: white;
+            box-shadow: 0 4px 24px rgba(16,185,129,0.4);
+        }
+        .btn-success:hover  { transform: translateY(-2px); box-shadow: 0 8px 32px rgba(16,185,129,0.5); }
+        .btn-success:active { transform: translateY(0); }
+
+        .btn.loading { opacity: 0.65; pointer-events: none; }
+
+        .spinner {
+            width: 18px; height: 18px;
+            border: 2px solid rgba(255,255,255,0.3);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 0.75s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* ── Section Header ── */
+        .section-label {
+            font-size: 11px;
+            font-weight: 800;
+            letter-spacing: 2.5px;
+            text-transform: uppercase;
+            color: var(--blue);
+            margin-bottom: 8px;
+        }
+        .section-title {
+            font-size: 28px;
+            font-weight: 800;
+            line-height: 1.2;
+            margin-bottom: 6px;
+        }
+        .section-sub {
+            font-size: 14px;
+            color: var(--muted);
+            line-height: 1.5;
+        }
+        .section-header { margin-bottom: 28px; }
+
+        /* ── Back Button ── */
+        .back-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            color: var(--muted);
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            padding: 6px 0;
+            margin-bottom: 24px;
+            background: none;
+            border: none;
+            transition: color 0.2s;
+        }
+        .back-btn:hover { color: var(--text); }
+
+        /* ── Plan Cards ── */
+        .plans-list {
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+            margin-bottom: 20px;
+        }
+
+        .plan-card {
+            background: var(--card);
+            border: 2px solid var(--border);
+            border-radius: var(--radius);
+            padding: 20px;
+            cursor: pointer;
+            transition: all 0.2s;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .plan-card::after {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 3px;
+            background: var(--plan-color, #3B82F6);
+            transform: scaleX(0);
+            transform-origin: left;
+            transition: transform 0.3s ease;
+        }
+
+        .plan-card:hover { background: var(--card-hover); }
+
+        .plan-card.selected {
+            border-color: var(--plan-color, #3B82F6);
+            background: var(--card-hover);
+        }
+        .plan-card.selected::after { transform: scaleX(1); }
+
+        .plan-check {
+            position: absolute;
+            top: 18px; right: 18px;
+            width: 22px; height: 22px;
+            border-radius: 50%;
+            background: var(--plan-color, #3B82F6);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: 900;
+            color: white;
+        }
+        .plan-card.selected .plan-check { display: flex; }
+
+        .combo-tag {
+            display: inline-block;
+            background: rgba(251,191,36,0.15);
+            border: 1px solid rgba(251,191,36,0.3);
+            color: #FCD34D;
+            font-size: 10px;
+            font-weight: 800;
+            padding: 3px 9px;
+            border-radius: 4px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            margin-bottom: 8px;
+        }
+
+        .plan-track {
+            font-size: 10px;
+            font-weight: 800;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            color: var(--plan-color, #3B82F6);
+            margin-bottom: 4px;
+        }
+
+        .plan-name { font-size: 18px; font-weight: 700; }
+        .plan-sub  { font-size: 13px; color: var(--muted); margin-top: 2px; }
+
+        .plan-top {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 12px;
+            margin-bottom: 14px;
+        }
+
+        .plan-duration {
+            background: rgba(255,255,255,0.06);
+            border: 1px solid var(--border);
+            color: var(--muted);
+            font-size: 12px;
+            font-weight: 600;
+            padding: 4px 12px;
+            border-radius: 20px;
+            white-space: nowrap;
+            flex-shrink: 0;
+            margin-top: 2px;
+        }
+
+        .plan-pricing {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .plan-original {
+            font-size: 14px;
+            color: var(--muted);
+            text-decoration: line-through;
+        }
+
+        .plan-price {
+            font-size: 26px;
+            font-weight: 900;
+            color: var(--plan-color, #3B82F6);
+        }
+
+        .plan-badge {
+            background: rgba(16,185,129,0.15);
+            border: 1px solid rgba(16,185,129,0.3);
+            color: #34D399;
+            font-size: 11px;
+            font-weight: 700;
+            padding: 3px 8px;
+            border-radius: 4px;
+        }
+
+        /* ── Error Message ── */
+        .error-msg {
+            background: rgba(239,68,68,0.1);
+            border: 1px solid rgba(239,68,68,0.3);
+            color: #FCA5A5;
+            padding: 12px 16px;
+            border-radius: 10px;
+            font-size: 13px;
+            margin-bottom: 14px;
+            display: none;
+        }
+
+        /* ── Form ── */
+        .form-group { margin-bottom: 18px; }
+
+        label {
+            display: block;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--muted);
+            margin-bottom: 8px;
+            letter-spacing: 0.2px;
+        }
+
+        input[type="text"],
+        input[type="email"],
+        input[type="tel"] {
+            width: 100%;
+            background: rgba(255,255,255,0.04);
+            border: 1.5px solid var(--border);
+            color: var(--text);
+            padding: 14px 16px;
+            border-radius: 12px;
+            font-size: 16px;
+            outline: none;
+            transition: border-color 0.2s, background 0.2s;
+            -webkit-appearance: none;
+        }
+        input:focus {
+            border-color: var(--blue);
+            background: rgba(59,130,246,0.06);
+        }
+        input::placeholder { color: rgba(255,255,255,0.2); }
+
+        .selected-plan-pill {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            background: var(--card);
+            border: 1.5px solid var(--border);
+            border-radius: 12px;
+            padding: 14px 16px;
+            margin-bottom: 28px;
+        }
+
+        .selected-plan-dot {
+            width: 10px; height: 10px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+
+        .selected-plan-info { flex: 1; min-width: 0; }
+        .selected-plan-name  { font-size: 14px; font-weight: 600; }
+        .selected-plan-price { font-size: 13px; color: var(--muted); margin-top: 2px; }
+
+        .change-link {
+            font-size: 13px;
+            color: var(--blue);
+            cursor: pointer;
+            flex-shrink: 0;
+            font-weight: 600;
+        }
+        .change-link:hover { text-decoration: underline; }
+
+        /* ── Payment ── */
+        .payment-amount-card {
+            background: linear-gradient(135deg, #0c1220, #0f1530);
+            border: 1.5px solid rgba(59,130,246,0.2);
+            border-radius: var(--radius);
+            padding: 28px 24px;
+            text-align: center;
+            margin-bottom: 24px;
+        }
+
+        .amount-label {
+            font-size: 12px;
+            font-weight: 700;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            color: var(--muted);
+            margin-bottom: 8px;
+        }
+        .amount-value {
+            font-size: 48px;
+            font-weight: 900;
+            color: var(--blue);
+            letter-spacing: -1px;
+        }
+        .amount-plan {
+            font-size: 13px;
+            color: var(--muted);
+            margin-top: 8px;
+        }
+
+        .qr-wrapper {
+            background: white;
+            border-radius: var(--radius);
+            padding: 20px;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .qr-wrapper img {
+            width: 100%;
+            max-width: 260px;
+            height: auto;
+            display: block;
+            margin: 0 auto;
+        }
+
+        .qr-fallback {
+            padding: 40px 20px;
+            color: #888;
+            font-size: 13px;
+            line-height: 1.6;
+        }
+
+        .qr-name {
+            color: #111;
+            font-weight: 800;
+            font-size: 15px;
+            margin-top: 14px;
+            letter-spacing: 1px;
+        }
+
+        .qr-instructions {
+            background: rgba(16,185,129,0.06);
+            border: 1px solid rgba(16,185,129,0.2);
+            border-radius: 12px;
+            padding: 16px 18px;
+            margin-bottom: 24px;
+        }
+
+        .qr-instructions ol {
+            padding-left: 18px;
+        }
+
+        .qr-instructions li {
+            font-size: 14px;
+            color: #6EE7B7;
+            line-height: 1.8;
+        }
+
+        .qr-instructions strong { color: #34D399; font-weight: 700; }
+
+        /* ── Thank You ── */
+        .thankyou-wrap {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 48px 24px 64px;
+            background:
+                radial-gradient(ellipse at 50% 20%, rgba(16,185,129,0.14) 0%, transparent 55%),
+                var(--bg);
+        }
+
+        .check-circle {
+            width: 84px; height: 84px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #10B981, #059669);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 38px;
+            margin: 0 auto 28px;
+            box-shadow: 0 8px 32px rgba(16,185,129,0.45);
+            animation: pop 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) both;
+        }
+
+        @keyframes pop {
+            from { transform: scale(0); opacity: 0; }
+            to   { transform: scale(1); opacity: 1; }
+        }
+
+        .thankyou-title {
+            font-size: 34px;
+            font-weight: 900;
+            margin-bottom: 12px;
+        }
+
+        .thankyou-sub {
+            font-size: 15px;
+            color: var(--muted);
+            max-width: 320px;
+            line-height: 1.65;
+            margin-bottom: 36px;
+        }
+
+        .summary-card {
+            background: var(--card);
+            border: 1.5px solid var(--border);
+            border-radius: var(--radius);
+            padding: 20px;
+            text-align: left;
+            width: 100%;
+            max-width: 380px;
+            margin-bottom: 28px;
+        }
+
+        .summary-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 11px 0;
+            border-bottom: 1px solid var(--border);
+            font-size: 14px;
+            gap: 12px;
+        }
+        .summary-row:last-child { border-bottom: none; }
+
+        .summary-key { color: var(--muted); flex-shrink: 0; }
+        .summary-val { font-weight: 600; text-align: right; word-break: break-all; }
+
+        .status-pill {
+            background: rgba(16,185,129,0.15);
+            border: 1px solid rgba(16,185,129,0.3);
+            color: #34D399;
+            font-size: 12px;
+            font-weight: 700;
+            padding: 3px 12px;
+            border-radius: 20px;
+        }
+
+        .contact-note {
+            font-size: 13px;
+            color: var(--muted);
+            line-height: 1.6;
+        }
+    </style>
+</head>
+<body>
+
+<!-- ════════════════════════════════════
+     STEP 1 · HERO / LANDING
+════════════════════════════════════ -->
+<div class="step active" id="step-1">
+    <div class="hero">
+        <div class="hero-label">🎓 Live AI Workshop</div>
+
+        <h1>
+            <span class="accent">AI</span> for<br>EveryOne
+        </h1>
+
+        <p class="hero-sub">
+            Learn AI tools, automation and industry workflows.
+        </p>
+
+        <div class="offer-pill">
+            🎁&nbsp; FLAT 50% OFF During This Session
+        </div>
+
+        <div class="hero-buttons">
+            <button class="btn btn-primary" onclick="goToStep(2)">
+                Reserve My Seat &nbsp;→
+            </button>
+            <button class="btn btn-outline" onclick="goToStep(2)">
+                View Plans
+            </button>
+        </div>
+    </div>
+</div>
+
+
+<!-- ════════════════════════════════════
+     STEP 2 · PLAN SELECTION
+════════════════════════════════════ -->
+<div class="step" id="step-2">
+    <div class="container">
+        <button class="back-btn" onclick="goToStep(1)">← Back</button>
+
+        <div class="section-header">
+            <div class="section-label">Choose Your Path</div>
+            <div class="section-title">Choose Your AI Track</div>
+            <div class="section-sub">Pick the learning path that matches your goals</div>
+        </div>
+
+        <div class="plans-list" id="plans-list"></div>
+
+        <div class="error-msg" id="plan-error">Please select a plan to continue.</div>
+
+        <button class="btn btn-primary" onclick="proceedFromPlanSelect()">
+            Continue &nbsp;→
+        </button>
+    </div>
+</div>
+
+
+<!-- ════════════════════════════════════
+     STEP 3 · REGISTRATION
+════════════════════════════════════ -->
+<div class="step" id="step-3">
+    <div class="container">
+        <button class="back-btn" onclick="goToStep(2)">← Back</button>
+
+        <div class="section-header">
+            <div class="section-label">Step 2 of 3</div>
+            <div class="section-title">Your Details</div>
+            <div class="section-sub">Enter your info to reserve your seat</div>
+        </div>
+
+        <div class="selected-plan-pill" id="selected-plan-summary"></div>
+
+        <form id="register-form" onsubmit="handleRegister(event)">
+            <div class="form-group">
+                <label for="field-name">Full Name *</label>
+                <input type="text"  id="field-name"  placeholder="Your full name"       required autocomplete="name">
+            </div>
+            <div class="form-group">
+                <label for="field-email">Email Address *</label>
+                <input type="email" id="field-email" placeholder="you@email.com"         required autocomplete="email">
+            </div>
+            <div class="form-group">
+                <label for="field-phone">WhatsApp / Phone *</label>
+                <input type="tel"   id="field-phone" placeholder="+91 98765 43210"       required autocomplete="tel">
+            </div>
+
+            <div class="error-msg" id="register-error">Please fill in all fields correctly.</div>
+
+            <button type="submit" class="btn btn-primary" style="margin-top:8px">
+                Proceed to Payment &nbsp;→
+            </button>
+        </form>
+    </div>
+</div>
+
+
+<!-- ════════════════════════════════════
+     STEP 4 · PAYMENT
+════════════════════════════════════ -->
+<div class="step" id="step-4">
+    <div class="container">
+        <button class="back-btn" onclick="goToStep(3)">← Back</button>
+
+        <div class="section-header">
+            <div class="section-label">Step 3 of 3</div>
+            <div class="section-title">Complete Payment</div>
+            <div class="section-sub">Scan and pay the exact amount shown below</div>
+        </div>
+
+        <div class="payment-amount-card">
+            <div class="amount-label">Amount to Pay</div>
+            <div class="amount-value" id="pay-amount">₹999</div>
+            <div class="amount-plan"  id="pay-plan-name">Track A</div>
+        </div>
+
+        <div class="qr-wrapper">
+            <img
+                src="phonepe-qr.png"
+                alt="PhonePe QR Code – KESHAV KARN"
+                onerror="this.style.display='none'; document.getElementById('qr-fallback').style.display='block'">
+            <div id="qr-fallback" class="qr-fallback" style="display:none">
+                QR code image not found.<br>
+                Save the PhonePe QR image as <strong>phonepe-qr.png</strong> in the project folder.
+            </div>
+            <div class="qr-name">KESHAV KARN</div>
+        </div>
+
+        <div class="qr-instructions">
+            <ol>
+                <li>Open <strong>PhonePe, GPay, or any UPI app</strong></li>
+                <li>Scan the QR code above</li>
+                <li>Pay exactly <strong id="pay-amount-inline">₹999</strong></li>
+                <li>Take a screenshot of the payment confirmation</li>
+                <li>Click the button below</li>
+            </ol>
+        </div>
+
+        <div class="error-msg" id="payment-error">
+            Could not connect. Your registration is saved — please reach out to us if you face any issues.
+        </div>
+
+        <button class="btn btn-success" id="paid-btn" onclick="handlePaymentDone()">
+            ✓ &nbsp;I've Made the Payment
+        </button>
+    </div>
+</div>
+
+
+<!-- ════════════════════════════════════
+     STEP 5 · THANK YOU
+════════════════════════════════════ -->
+<div class="step" id="step-5">
+    <div class="thankyou-wrap">
+        <div class="check-circle">✓</div>
+
+        <div class="thankyou-title">You're Registered!</div>
+
+        <p class="thankyou-sub">
+            Welcome aboard! We've received your registration and payment.
+            We'll be in touch with workshop details soon.
+        </p>
+
+        <div class="summary-card" id="thank-you-summary"></div>
+
+        <p class="contact-note">
+            Questions? Reach us on WhatsApp or email.<br>
+            We'll confirm your seat within 24 hours.
+        </p>
+    </div>
+</div>
+
+
+<script>
+/* ══════════════════════════════════════════════════════════════
+   CONFIG
+   After deploying your Google Apps Script (see apps-script.js),
+   paste the Web App URL below.
+══════════════════════════════════════════════════════════════ */
+const GOOGLE_SHEET_URL = 'YOUR_APPS_SCRIPT_DEPLOYMENT_URL_HERE';
+
+
+/* ══════════════════════════════════════════════════════════════
+   PLANS DATA
+══════════════════════════════════════════════════════════════ */
+const PLANS = [
+    {
+        id: 'track-a',
+        track: 'TRACK A',
+        name: 'AI Productivity Essentials',
+        subtitle: 'Use AI Effectively',
+        duration: '5 Days',
+        originalPrice: 1999,
+        price: 999,
+        discount: '50% OFF',
+        color: '#8B5CF6',
+        isCombo: false,
+    },
+    {
+        id: 'track-b',
+        track: 'TRACK B',
+        name: 'AI App Builder',
+        subtitle: 'Build with AI',
+        duration: '10 Days',
+        originalPrice: 4999,
+        price: 2499,
+        discount: '50% OFF',
+        color: '#10B981',
+        isCombo: false,
+    },
+    {
+        id: 'track-c',
+        track: 'TRACK C',
+        name: 'Advanced AI Workflows',
+        subtitle: 'Control and Scale AI',
+        duration: '5 Days',
+        originalPrice: 2999,
+        price: 1499,
+        discount: '50% OFF',
+        color: '#F59E0B',
+        isCombo: false,
+    },
+    {
+        id: 'combo',
+        track: 'ALL 3 TRACKS',
+        name: 'Combo – Get All 3 Tracks',
+        subtitle: 'Unlock everything. Learn everything. Build anything.',
+        duration: '24+ Days',
+        originalPrice: 9999,
+        price: 4499,
+        discount: '55% OFF',
+        color: '#6366F1',
+        isCombo: true,
+    },
+];
+
+
+/* ══════════════════════════════════════════════════════════════
+   STATE
+══════════════════════════════════════════════════════════════ */
+const state = {
+    selectedPlan: null,
+    registration: {},
+};
+
+
+/* ══════════════════════════════════════════════════════════════
+   STEP NAVIGATION
+══════════════════════════════════════════════════════════════ */
+function goToStep(n) {
+    document.querySelectorAll('.step').forEach(function(el) {
+        el.classList.remove('active');
+    });
+    document.getElementById('step-' + n).classList.add('active');
+    window.scrollTo({ top: 0, behavior: 'instant' });
+}
+
+
+/* ══════════════════════════════════════════════════════════════
+   PLAN CARDS
+══════════════════════════════════════════════════════════════ */
+function renderPlans() {
+    var container = document.getElementById('plans-list');
+
+    container.innerHTML = PLANS.map(function(plan) {
+        var isSelected = state.selectedPlan && state.selectedPlan.id === plan.id;
+
+        return '<div class="plan-card ' + (isSelected ? 'selected' : '') + '" ' +
+               'style="--plan-color:' + plan.color + '" ' +
+               'onclick="selectPlan(\'' + plan.id + '\')">' +
+
+               '<div class="plan-check">✓</div>' +
+
+               (plan.isCombo ? '<div class="combo-tag">★ Best Value</div>' : '') +
+
+               '<div class="plan-top">' +
+                   '<div style="min-width:0">' +
+                       '<div class="plan-track">' + plan.track + '</div>' +
+                       '<div class="plan-name">' + plan.name + '</div>' +
+                       '<div class="plan-sub">' + plan.subtitle + '</div>' +
+                   '</div>' +
+                   '<div class="plan-duration">' + plan.duration + '</div>' +
+               '</div>' +
+
+               '<div class="plan-pricing">' +
+                   '<span class="plan-original">₹' + plan.originalPrice.toLocaleString('en-IN') + '</span>' +
+                   '<span class="plan-price">₹' + plan.price.toLocaleString('en-IN') + '</span>' +
+                   '<span class="plan-badge">' + plan.discount + '</span>' +
+               '</div>' +
+
+               '</div>';
+    }).join('');
+}
+
+function selectPlan(id) {
+    state.selectedPlan = PLANS.find(function(p) { return p.id === id; });
+    document.getElementById('plan-error').style.display = 'none';
+    renderPlans();
+}
+
+function proceedFromPlanSelect() {
+    if (!state.selectedPlan) {
+        document.getElementById('plan-error').style.display = 'block';
+        return;
+    }
+    renderSelectedPlanPill();
+    goToStep(3);
+}
+
+
+/* ══════════════════════════════════════════════════════════════
+   REGISTRATION
+══════════════════════════════════════════════════════════════ */
+function renderSelectedPlanPill() {
+    var plan = state.selectedPlan;
+    document.getElementById('selected-plan-summary').innerHTML =
+        '<div class="selected-plan-dot" style="background:' + plan.color + '"></div>' +
+        '<div class="selected-plan-info">' +
+            '<div class="selected-plan-name">' + plan.name + '</div>' +
+            '<div class="selected-plan-price">₹' + plan.price.toLocaleString('en-IN') + ' &nbsp;·&nbsp; ' + plan.duration + '</div>' +
+        '</div>' +
+        '<span class="change-link" onclick="goToStep(2)">Change</span>';
+}
+
+function handleRegister(e) {
+    e.preventDefault();
+
+    var name  = document.getElementById('field-name').value.trim();
+    var email = document.getElementById('field-email').value.trim();
+    var phone = document.getElementById('field-phone').value.trim();
+    var errEl = document.getElementById('register-error');
+
+    if (!name || !email || !phone) {
+        errEl.style.display = 'block';
+        return;
+    }
+
+    errEl.style.display = 'none';
+    state.registration = { name: name, email: email, phone: phone };
+
+    renderPaymentPage();
+    goToStep(4);
+}
+
+
+/* ══════════════════════════════════════════════════════════════
+   PAYMENT
+══════════════════════════════════════════════════════════════ */
+function renderPaymentPage() {
+    var plan      = state.selectedPlan;
+    var amountStr = '₹' + plan.price.toLocaleString('en-IN');
+
+    document.getElementById('pay-amount').textContent      = amountStr;
+    document.getElementById('pay-amount-inline').textContent = amountStr;
+    document.getElementById('pay-plan-name').textContent   = plan.track + ' – ' + plan.name;
+}
+
+function handlePaymentDone() {
+    var btn   = document.getElementById('paid-btn');
+    var errEl = document.getElementById('payment-error');
+    errEl.style.display = 'none';
+
+    btn.classList.add('loading');
+    btn.innerHTML = '<div class="spinner"></div>&nbsp; Saving your registration…';
+
+    var payload = {
+        name:      state.registration.name,
+        email:     state.registration.email,
+        phone:     state.registration.phone,
+        plan:      state.selectedPlan.track + ' – ' + state.selectedPlan.name,
+        amount:    state.selectedPlan.price,
+        timestamp: new Date().toISOString(),
+    };
+
+    saveToSheets(payload)
+        .catch(function(err) {
+            console.error('Sheets error:', err);
+            errEl.style.display = 'block';
+        })
+        .finally(function() {
+            renderThankYouPage();
+            goToStep(5);
+        });
+}
+
+
+/* ══════════════════════════════════════════════════════════════
+   GOOGLE SHEETS SAVE
+   Uses no-cors so the request is sent without reading response —
+   Apps Script records the row regardless. Move to Thank You
+   optimistically after the fetch completes.
+══════════════════════════════════════════════════════════════ */
+function saveToSheets(data) {
+    if (!GOOGLE_SHEET_URL || GOOGLE_SHEET_URL === 'YOUR_APPS_SCRIPT_DEPLOYMENT_URL_HERE') {
+        console.warn('Google Sheets URL not set. Open index.html and update GOOGLE_SHEET_URL.');
+        return Promise.resolve();
+    }
+
+    return fetch(GOOGLE_SHEET_URL, {
+        method:  'POST',
+        mode:    'no-cors',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify(data),
+    });
+}
+
+
+/* ══════════════════════════════════════════════════════════════
+   THANK YOU
+══════════════════════════════════════════════════════════════ */
+function renderThankYouPage() {
+    var r    = state.registration;
+    var plan = state.selectedPlan;
+
+    document.getElementById('thank-you-summary').innerHTML =
+        row('Name',         r.name) +
+        row('Email',        r.email) +
+        row('Phone',        r.phone) +
+        row('Plan',         '<span style="color:' + plan.color + ';font-weight:700">' + plan.name + '</span>') +
+        row('Duration',     plan.duration) +
+        row('Amount Paid',  '₹' + plan.price.toLocaleString('en-IN')) +
+        row('Status',       '<span class="status-pill">Registered ✓</span>');
+}
+
+function row(key, val) {
+    return '<div class="summary-row">' +
+           '<span class="summary-key">' + key + '</span>' +
+           '<span class="summary-val">'  + val + '</span>' +
+           '</div>';
+}
+
+
+/* ══════════════════════════════════════════════════════════════
+   INIT
+══════════════════════════════════════════════════════════════ */
+renderPlans();
+</script>
+</body>
+</html>
