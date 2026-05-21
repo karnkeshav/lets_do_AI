@@ -1355,18 +1355,26 @@ function openRazorpayCheckout() {
 ══════════════════════════════════════════════════════════════ */
 function saveToSheets(data) {
     if (!GOOGLE_SHEET_URL || GOOGLE_SHEET_URL === 'YOUR_APPS_SCRIPT_DEPLOYMENT_URL_HERE') {
-        console.warn('Google Sheets URL not set. Open index.html and update GOOGLE_SHEET_URL.');
+        console.warn('Google Sheets URL not set.');
         return Promise.resolve();
     }
 
     return fetch(GOOGLE_SHEET_URL, {
-        method:  'POST',
-        mode:    'no-cors',
-        headers: { 'Content-Type': 'application/json' },
-        body:    JSON.stringify(data),
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
+    })
+    .then(res => res.text())
+    .then(data => {
+        console.log('Sheets success:', data);
+    })
+    .catch(err => {
+        console.error('Sheets error:', err);
+        alert('Google Sheets save failed.');
     });
 }
-
 
 /* ══════════════════════════════════════════════════════════════
    THANK YOU
