@@ -1,0 +1,18 @@
+# ── Generated at deploy time by GitHub Actions ────────────────
+# Never commit real secrets. Add values as repository secrets
+# (Settings → Secrets and variables → Actions) instead.
+config.js
+
+# ── Local environment files ────────────────────────────────────
+.env
+.env.local
+.env.*.local
+
+# ── OS / editor ───────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+desktop.ini
+.vscode/
+.idea/
+*.swp
+*.swo
