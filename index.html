@@ -611,6 +611,115 @@
             color: var(--muted);
             line-height: 1.6;
         }
+
+        /* ── Batch Cards ── */
+        .batch-list {
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+            margin-bottom: 20px;
+        }
+
+        .batch-card {
+            background: var(--card);
+            border: 2px solid var(--border);
+            border-radius: var(--radius);
+            padding: 20px;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: flex-start;
+            gap: 16px;
+        }
+
+        .batch-card:hover { background: var(--card-hover); }
+
+        .batch-card.selected {
+            border-color: var(--blue);
+            background: rgba(59,130,246,0.06);
+        }
+
+        .batch-icon {
+            font-size: 26px;
+            width: 52px;
+            height: 52px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(255,255,255,0.05);
+            border-radius: 12px;
+            flex-shrink: 0;
+        }
+
+        .batch-card.selected .batch-icon {
+            background: rgba(59,130,246,0.15);
+        }
+
+        .batch-info { flex: 1; min-width: 0; }
+
+        .batch-name {
+            font-size: 18px;
+            font-weight: 700;
+            margin-bottom: 4px;
+        }
+
+        .batch-days {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--blue);
+        }
+
+        .batch-time {
+            font-size: 13px;
+            color: var(--muted);
+            margin-top: 3px;
+        }
+
+        .batch-desc {
+            font-size: 13px;
+            color: var(--muted);
+            margin-top: 8px;
+            line-height: 1.45;
+        }
+
+        .batch-check {
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            background: var(--blue);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: 900;
+            color: white;
+            flex-shrink: 0;
+            margin-top: 2px;
+        }
+
+        .batch-card.selected .batch-check { display: flex; }
+
+        .mini-plan-pill {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: rgba(255,255,255,0.04);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 12px 14px;
+            margin-bottom: 24px;
+            font-size: 13px;
+        }
+
+        .mini-plan-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+
+        .mini-plan-name { font-weight: 600; }
+        .mini-plan-price { color: var(--muted); margin-left: auto; flex-shrink: 0; }
     </style>
 </head>
 <body>
@@ -671,14 +780,40 @@
 
 
 <!-- ════════════════════════════════════
-     STEP 3 · REGISTRATION
+     STEP 3 · BATCH SELECTION
 ════════════════════════════════════ -->
 <div class="step" id="step-3">
     <div class="container">
         <button class="back-btn" onclick="goToStep(2)">← Back</button>
 
         <div class="section-header">
-            <div class="section-label">Step 2 of 3</div>
+            <div class="section-label">Step 2 of 5</div>
+            <div class="section-title">Choose Your Batch</div>
+            <div class="section-sub">Pick a schedule that works for you</div>
+        </div>
+
+        <div class="mini-plan-pill" id="batch-plan-pill"></div>
+
+        <div class="batch-list" id="batch-list"></div>
+
+        <div class="error-msg" id="batch-error">Please select a batch to continue.</div>
+
+        <button class="btn btn-primary" onclick="proceedFromBatchSelect()">
+            Continue &nbsp;→
+        </button>
+    </div>
+</div>
+
+
+<!-- ════════════════════════════════════
+     STEP 4 · REGISTRATION
+════════════════════════════════════ -->
+<div class="step" id="step-4">
+    <div class="container">
+        <button class="back-btn" onclick="goToStep(3)">← Back</button>
+
+        <div class="section-header">
+            <div class="section-label">Step 3 of 5</div>
             <div class="section-title">Your Details</div>
             <div class="section-sub">Enter your info to reserve your seat</div>
         </div>
@@ -710,14 +845,14 @@
 
 
 <!-- ════════════════════════════════════
-     STEP 4 · PAYMENT
+     STEP 5 · PAYMENT
 ════════════════════════════════════ -->
-<div class="step" id="step-4">
+<div class="step" id="step-5">
     <div class="container">
-        <button class="back-btn" onclick="goToStep(3)">← Back</button>
+        <button class="back-btn" onclick="goToStep(4)">← Back</button>
 
         <div class="section-header">
-            <div class="section-label">Step 3 of 3</div>
+            <div class="section-label">Step 4 of 5</div>
             <div class="section-title">Complete Payment</div>
             <div class="section-sub">Scan and pay the exact amount shown below</div>
         </div>
@@ -762,9 +897,9 @@
 
 
 <!-- ════════════════════════════════════
-     STEP 5 · THANK YOU
+     STEP 6 · THANK YOU
 ════════════════════════════════════ -->
-<div class="step" id="step-5">
+<div class="step" id="step-6">
     <div class="thankyou-wrap">
         <div class="check-circle">✓</div>
 
@@ -894,11 +1029,35 @@ const PLANS = [
 
 
 /* ══════════════════════════════════════════════════════════════
+   BATCHES DATA
+══════════════════════════════════════════════════════════════ */
+const BATCHES = [
+    {
+        id: 'weekday',
+        name: 'Weekday Batch',
+        days: 'Monday – Friday',
+        time: '8:00 PM – 10:00 PM IST',
+        icon: '💼',
+        desc: 'Ideal for working professionals & students with weekends free',
+    },
+    {
+        id: 'weekend',
+        name: 'Weekend Batch',
+        days: 'Saturday & Sunday',
+        time: '10:00 AM – 1:00 PM IST',
+        icon: '🌅',
+        desc: 'Ideal for those who prefer a relaxed, deep-dive weekend pace',
+    },
+];
+
+
+/* ══════════════════════════════════════════════════════════════
    STATE
 ══════════════════════════════════════════════════════════════ */
 const state = {
-    selectedPlan: null,
-    registration: {},
+    selectedPlan:  null,
+    selectedBatch: null,
+    registration:  {},
 };
 
 
@@ -966,8 +1125,53 @@ function proceedFromPlanSelect() {
         document.getElementById('plan-error').style.display = 'block';
         return;
     }
-    renderSelectedPlanPill();
+    // Reset batch so user picks fresh if they changed plan
+    state.selectedBatch = null;
+    renderBatches();
+    // Show the chosen plan at the top of the batch step
+    var plan = state.selectedPlan;
+    document.getElementById('batch-plan-pill').innerHTML =
+        '<div class="mini-plan-dot" style="background:' + plan.color + '"></div>' +
+        '<span class="mini-plan-name">' + plan.name + '</span>' +
+        '<span class="mini-plan-price">₹' + plan.price.toLocaleString('en-IN') + '</span>';
     goToStep(3);
+}
+
+
+/* ══════════════════════════════════════════════════════════════
+   BATCH CARDS
+══════════════════════════════════════════════════════════════ */
+function renderBatches() {
+    var container = document.getElementById('batch-list');
+    container.innerHTML = BATCHES.map(function(batch) {
+        var isSelected = state.selectedBatch && state.selectedBatch.id === batch.id;
+        return '<div class="batch-card ' + (isSelected ? 'selected' : '') + '" ' +
+               'onclick="selectBatch(\'' + batch.id + '\')">' +
+                   '<div class="batch-icon">' + batch.icon + '</div>' +
+                   '<div class="batch-info">' +
+                       '<div class="batch-name">' + batch.name + '</div>' +
+                       '<div class="batch-days">' + batch.days + '</div>' +
+                       '<div class="batch-time">' + batch.time + '</div>' +
+                       '<div class="batch-desc">' + batch.desc + '</div>' +
+                   '</div>' +
+                   '<div class="batch-check">✓</div>' +
+               '</div>';
+    }).join('');
+}
+
+function selectBatch(id) {
+    state.selectedBatch = BATCHES.find(function(b) { return b.id === id; });
+    document.getElementById('batch-error').style.display = 'none';
+    renderBatches();
+}
+
+function proceedFromBatchSelect() {
+    if (!state.selectedBatch) {
+        document.getElementById('batch-error').style.display = 'block';
+        return;
+    }
+    renderSelectedPlanPill();
+    goToStep(4);
 }
 
 
@@ -975,12 +1179,16 @@ function proceedFromPlanSelect() {
    REGISTRATION
 ══════════════════════════════════════════════════════════════ */
 function renderSelectedPlanPill() {
-    var plan = state.selectedPlan;
+    var plan  = state.selectedPlan;
+    var batch = state.selectedBatch;
     document.getElementById('selected-plan-summary').innerHTML =
         '<div class="selected-plan-dot" style="background:' + plan.color + '"></div>' +
         '<div class="selected-plan-info">' +
             '<div class="selected-plan-name">' + plan.name + '</div>' +
-            '<div class="selected-plan-price">₹' + plan.price.toLocaleString('en-IN') + ' &nbsp;·&nbsp; ' + plan.duration + '</div>' +
+            '<div class="selected-plan-price">₹' + plan.price.toLocaleString('en-IN') +
+                ' &nbsp;·&nbsp; ' + plan.duration +
+                (batch ? ' &nbsp;·&nbsp; ' + batch.name : '') +
+            '</div>' +
         '</div>' +
         '<span class="change-link" onclick="goToStep(2)">Change</span>';
 }
@@ -1002,7 +1210,7 @@ function handleRegister(e) {
     state.registration = { name: name, email: email, phone: phone };
 
     renderPaymentPage();
-    goToStep(4);
+    goToStep(5);
 }
 
 
@@ -1031,6 +1239,7 @@ function handlePaymentDone() {
         email:     state.registration.email,
         phone:     state.registration.phone,
         plan:      state.selectedPlan.track + ' – ' + state.selectedPlan.name,
+        batch:     state.selectedBatch ? state.selectedBatch.name + ' (' + state.selectedBatch.days + ')' : '',
         amount:    state.selectedPlan.price,
         timestamp: new Date().toISOString(),
     };
@@ -1042,7 +1251,7 @@ function handlePaymentDone() {
         })
         .finally(function() {
             renderThankYouPage();
-            goToStep(5);
+            goToStep(6);
         });
 }
 
@@ -1075,11 +1284,13 @@ function renderThankYouPage() {
     var r    = state.registration;
     var plan = state.selectedPlan;
 
+    var batch = state.selectedBatch;
     document.getElementById('thank-you-summary').innerHTML =
         row('Name',         r.name) +
         row('Email',        r.email) +
         row('Phone',        r.phone) +
         row('Plan',         '<span style="color:' + plan.color + ';font-weight:700">' + plan.name + '</span>') +
+        row('Batch',        batch ? batch.name + '<br><span style="font-size:12px;color:var(--muted)">' + batch.days + ' · ' + batch.time + '</span>' : '–') +
         row('Duration',     plan.duration) +
         row('Amount Paid',  '₹' + plan.price.toLocaleString('en-IN')) +
         row('Status',       '<span class="status-pill">Registered ✓</span>');
@@ -1097,6 +1308,7 @@ function row(key, val) {
    INIT
 ══════════════════════════════════════════════════════════════ */
 renderPlans();
+renderBatches();
 </script>
 </body>
 </html>

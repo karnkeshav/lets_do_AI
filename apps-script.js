@@ -37,6 +37,7 @@ var HEADERS = [
     'Email',
     'Phone',
     'Plan',
+    'Batch',
     'Amount (₹)',
     'Status',
 ];
@@ -58,6 +59,7 @@ function doPost(e) {
             sheet.setColumnWidth(1, 160); /* Timestamp */
             sheet.setColumnWidth(3, 200); /* Email */
             sheet.setColumnWidth(5, 280); /* Plan */
+            sheet.setColumnWidth(6, 220); /* Batch */
         }
 
         var data = JSON.parse(e.postData.contents);
@@ -74,6 +76,7 @@ function doPost(e) {
             data.email  || '',
             data.phone  || '',
             data.plan   || '',
+            data.batch  || '',
             data.amount || '',
             'Payment Declared',
         ]);
