@@ -864,14 +864,11 @@
         </div>
 
         <div class="qr-wrapper">
-            <img
-                src="phonepe-qr.png"
-                alt="PhonePe QR Code – KESHAV KARN"
-                onerror="this.style.display='none'; document.getElementById('qr-fallback').style.display='block'">
-            <div id="qr-fallback" class="qr-fallback" style="display:none">
-                QR code image not found.<br>
-                Save the PhonePe QR image as <strong>phonepe-qr.png</strong> in the project folder.
-            </div>
+            <div id="qr-loading" style="padding:60px 20px;color:#888;font-size:13px;text-align:center">Generating QR…</div>
+            <img id="payment-qr-img" src="" alt="UPI QR Code"
+                 style="display:none;width:100%;max-width:260px;height:auto;margin:0 auto"
+                 onload="this.style.display='block'; document.getElementById('qr-loading').style.display='none';"
+                 onerror="document.getElementById('qr-loading').innerHTML='Could not load QR. Check your internet connection.';">
             <div class="qr-name">KESHAV KARN</div>
         </div>
 
@@ -879,9 +876,9 @@
             <ol>
                 <li>Open <strong>PhonePe, GPay, or any UPI app</strong></li>
                 <li>Scan the QR code above</li>
-                <li>Pay exactly <strong id="pay-amount-inline">₹999</strong></li>
-                <li>Take a screenshot of the payment confirmation</li>
-                <li>Click the button below</li>
+                <li>The amount <strong id="pay-amount-inline">₹999</strong> will be <strong>pre-filled automatically</strong></li>
+                <li>Confirm and complete the payment</li>
+                <li>Click the button below once done</li>
             </ol>
         </div>
 
@@ -903,11 +900,11 @@
     <div class="thankyou-wrap">
         <div class="check-circle">✓</div>
 
-        <div class="thankyou-title">You're Registered!</div>
+        <div class="thankyou-title">Payment Confirmed!</div>
 
-        <p class="thankyou-sub">
-            Welcome aboard! We've received your registration and payment.
-            We'll be in touch with workshop details soon.
+        <p class="thankyou-sub" id="thankyou-message">
+            Thank you for your payment.<br>
+            We'll be in touch on your WhatsApp.
         </p>
 
         <div class="summary-card" id="thank-you-summary"></div>
@@ -927,6 +924,14 @@
    paste the Web App URL below.
 ══════════════════════════════════════════════════════════════ */
 const GOOGLE_SHEET_URL = 'https://script.google.com/macros/s/AKfycbySMsqD0Njmkn62hXYNHKaTyT9S3oJvBIUbsvrkOrsd9RB3t0sbjCo4wpq6kmWPJiRBxQ/exec';
+
+/* ── UPI CONFIG ───────────────────────────────────────────────
+   UPI ID for your PhonePe account.
+   Common PhonePe format: MOBILENUMBER@ybl
+   Verify yours: open PhonePe → Profile → UPI IDs
+──────────────────────────────────────────────────────────── */
+const UPI_ID   = '8520977573@ybl';   // ← update if your PhonePe UPI ID differs
+const UPI_NAME = 'KESHAV KARN';
 
 
 /* ══════════════════════════════════════════════════════════════
@@ -1221,9 +1226,27 @@ function renderPaymentPage() {
     var plan      = state.selectedPlan;
     var amountStr = '₹' + plan.price.toLocaleString('en-IN');
 
-    document.getElementById('pay-amount').textContent      = amountStr;
+    document.getElementById('pay-amount').textContent        = amountStr;
     document.getElementById('pay-amount-inline').textContent = amountStr;
-    document.getElementById('pay-plan-name').textContent   = plan.track + ' – ' + plan.name;
+    document.getElementById('pay-plan-name').textContent     = plan.track + ' – ' + plan.name;
+
+    // Build UPI deep-link with amount pre-filled — customer sees ₹AMOUNT in their UPI app
+    var note   = 'AI Workshop – ' + plan.track;
+    var upiUrl = 'upi://pay?pa=' + encodeURIComponent(UPI_ID) +
+                 '&pn=' + encodeURIComponent(UPI_NAME) +
+                 '&am=' + plan.price +
+                 '&cu=INR' +
+                 '&tn=' + encodeURIComponent(note);
+
+    // Generate QR via free API (requires internet; same requirement as the rest of the page)
+    var qrSrc = 'https://api.qrserver.com/v1/create-qr-code/?size=280x280&ecc=M&data=' +
+                encodeURIComponent(upiUrl);
+
+    var img = document.getElementById('payment-qr-img');
+    img.style.display = 'none';
+    document.getElementById('qr-loading').style.display = 'block';
+    document.getElementById('qr-loading').innerHTML = 'Generating QR…';
+    img.src = qrSrc;
 }
 
 function handlePaymentDone() {
@@ -1281,19 +1304,26 @@ function saveToSheets(data) {
    THANK YOU
 ══════════════════════════════════════════════════════════════ */
 function renderThankYouPage() {
-    var r    = state.registration;
-    var plan = state.selectedPlan;
-
+    var r     = state.registration;
+    var plan  = state.selectedPlan;
     var batch = state.selectedBatch;
+
+    // Personalised welcome message
+    document.getElementById('thankyou-message').innerHTML =
+        'Thank you for your payment, <strong>' + r.name + '</strong>! 🎉<br><br>' +
+        'Welcome to <span style="color:' + plan.color + ';font-weight:700">' + plan.name + '</span>' +
+        (batch ? ' — <strong>' + batch.name + '</strong>' : '') + '.<br><br>' +
+        'We will inform you of the upcoming batch schedule and joining details on your WhatsApp number <strong>' + r.phone + '</strong>.';
+
     document.getElementById('thank-you-summary').innerHTML =
-        row('Name',         r.name) +
-        row('Email',        r.email) +
-        row('Phone',        r.phone) +
-        row('Plan',         '<span style="color:' + plan.color + ';font-weight:700">' + plan.name + '</span>') +
-        row('Batch',        batch ? batch.name + '<br><span style="font-size:12px;color:var(--muted)">' + batch.days + ' · ' + batch.time + '</span>' : '–') +
-        row('Duration',     plan.duration) +
-        row('Amount Paid',  '₹' + plan.price.toLocaleString('en-IN')) +
-        row('Status',       '<span class="status-pill">Registered ✓</span>');
+        row('Name',        r.name) +
+        row('Email',       r.email) +
+        row('WhatsApp',    r.phone) +
+        row('Plan',        '<span style="color:' + plan.color + ';font-weight:700">' + plan.name + '</span>') +
+        row('Batch',       batch ? batch.name + '<br><span style="font-size:12px;color:var(--muted)">' + batch.days + ' · ' + batch.time + '</span>' : '–') +
+        row('Duration',    plan.duration) +
+        row('Amount Paid', '&#8377;' + plan.price.toLocaleString('en-IN')) +
+        row('Status',      '<span class="status-pill">Confirmed ✓</span>');
 }
 
 function row(key, val) {

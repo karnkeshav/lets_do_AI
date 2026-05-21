@@ -1,9 +1,9 @@
 /**
  * AI for EveryOne Workshop — Google Apps Script Backend
  *
- * SETUP (do this once):
+ * ─── GOOGLE SHEETS SETUP (do this once) ───────────────────────────────────
  *
- *  1. Go to sheets.google.com and create a new spreadsheet.
+ *  1. Go to sheets.google.com → create a new spreadsheet.
  *     Name it "AI Workshop Registrations" (or anything you like).
  *
  *  2. In the spreadsheet, open Extensions > Apps Script.
@@ -18,16 +18,36 @@
  *       · Who has access:    Anyone
  *     Click Deploy, then Authorize when Google asks.
  *
- *  6. Copy the "Web App URL" that appears (looks like
- *     https://script.google.com/macros/s/AKfy.../exec).
+ *  6. Copy the "Web App URL" (looks like https://script.google.com/macros/s/…/exec).
  *
- *  7. Open index.html in a text editor, find the line:
- *       const GOOGLE_SHEET_URL = 'YOUR_APPS_SCRIPT_DEPLOYMENT_URL_HERE';
- *     Replace the placeholder with your URL (keep the quotes).
+ *  7. Open index.html → find GOOGLE_SHEET_URL → paste the URL.
  *
- *  Done! Every registration will now appear as a new row
- *  in the "Registrations" sheet, styled and ready.
+ * ─── WHATSAPP SETUP (Meta Cloud API — free) ───────────────────────────────
+ *
+ *  Follow these steps to send automatic WhatsApp confirmations from
+ *  your number 8520977573 ("AI Readiness"):
+ *
+ *  1. Go to https://developers.facebook.com/ → Log in with your Meta account.
+ *
+ *  2. Create a new App → choose "Business" type.
+ *
+ *  3. Add the "WhatsApp" product to your app.
+ *
+ *  4. Under WhatsApp > Getting Started:
+ *       · Add your phone number 8520977573 as the "From" number.
+ *       · Note down the Phone Number ID  → paste into WHATSAPP_PHONE_ID below.
+ *       · Generate a temporary access token → paste into WHATSAPP_TOKEN below.
+ *         (For a permanent token, create a System User in Business Settings.)
+ *
+ *  5. Re-deploy this script (Deploy > Manage Deployments > Edit > New Version).
+ *
+ *  That's it! Every registration will now trigger a WhatsApp message to the
+ *  customer from your AI Readiness number.
  */
+
+/* ── WHATSAPP CONFIG ────────────────────────────────────────────────────── */
+var WHATSAPP_TOKEN    = 'YOUR_META_WHATSAPP_ACCESS_TOKEN';  // from Meta Developer Console
+var WHATSAPP_PHONE_ID = 'YOUR_PHONE_NUMBER_ID';             // Phone Number ID from Meta
 
 var SHEET_NAME = 'Registrations';
 
@@ -92,6 +112,9 @@ function doPost(e) {
             rowRange.setFontColor('#e5e7eb');
         }
 
+        /* Send WhatsApp confirmation to the customer */
+        sendWhatsAppMessage(data.phone, data);
+
         return ContentService
             .createTextOutput(JSON.stringify({ success: true, row: lastRow }))
             .setMimeType(ContentService.MimeType.JSON);
@@ -102,6 +125,54 @@ function doPost(e) {
             .setMimeType(ContentService.MimeType.JSON);
     }
 }
+
+
+/* ── WHATSAPP NOTIFICATION ──────────────────────────────────────────────── */
+function sendWhatsAppMessage(toPhone, data) {
+    if (!WHATSAPP_TOKEN || WHATSAPP_TOKEN === 'YOUR_META_WHATSAPP_ACCESS_TOKEN') {
+        Logger.log('WhatsApp not configured — skipping notification.');
+        return;
+    }
+
+    /* Normalise phone: strip spaces/dashes/brackets, add country code 91 */
+    var phone = toPhone.replace(/[\s\-\(\)\+]/g, '');
+    if (phone.charAt(0) === '0')  phone = phone.substring(1);
+    if (phone.length === 10)      phone = '91' + phone;
+
+    var message =
+        '🎓 *AI for EveryOne Workshop*\n\n' +
+        'Hi ' + (data.name || 'there') + '! 🙏\n\n' +
+        'Your registration is *confirmed*!\n\n' +
+        '📚 *Plan:* '    + (data.plan   || '') + '\n' +
+        '📅 *Batch:* '   + (data.batch  || '') + '\n' +
+        '💰 *Amount Paid:* ₹' + (data.amount || '') + '\n\n' +
+        'We will share the upcoming batch schedule and joining link on this WhatsApp number.\n\n' +
+        'Welcome to the AI revolution! 🚀\n\n' +
+        '— *Team AI Readiness*';
+
+    var url = 'https://graph.facebook.com/v18.0/' + WHATSAPP_PHONE_ID + '/messages';
+
+    var payload = JSON.stringify({
+        messaging_product: 'whatsapp',
+        to:   phone,
+        type: 'text',
+        text: { body: message },
+    });
+
+    try {
+        var response = UrlFetchApp.fetch(url, {
+            method:             'post',
+            contentType:        'application/json',
+            headers:            { 'Authorization': 'Bearer ' + WHATSAPP_TOKEN },
+            payload:            payload,
+            muteHttpExceptions: true,
+        });
+        Logger.log('WhatsApp → ' + phone + ' | HTTP ' + response.getResponseCode());
+    } catch (err) {
+        Logger.log('WhatsApp error: ' + err.toString());
+    }
+}
+
 
 /* Health-check — visit the URL in a browser to confirm the script is live */
 function doGet(e) {
