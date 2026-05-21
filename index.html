@@ -336,6 +336,40 @@
             border-radius: 4px;
         }
 
+        /* ── Plan Features ── */
+        .plan-divider {
+            border: none;
+            border-top: 1px solid var(--border);
+            margin: 16px 0 14px;
+        }
+
+        .plan-features {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 7px;
+        }
+
+        .plan-features li {
+            display: flex;
+            align-items: flex-start;
+            gap: 8px;
+            font-size: 13px;
+            color: #D1D5DB;
+            line-height: 1.45;
+        }
+
+        .plan-features li::before {
+            content: '✓';
+            color: var(--plan-color, #3B82F6);
+            font-size: 11px;
+            font-weight: 900;
+            flex-shrink: 0;
+            margin-top: 2px;
+        }
+
         /* ── Error Message ── */
         .error-msg {
             background: rgba(239,68,68,0.1);
@@ -775,6 +809,18 @@ const PLANS = [
         discount: '50% OFF',
         color: '#8B5CF6',
         isCombo: false,
+        features: [
+            'Understanding AI in Simple Language',
+            'Prompt & Content Engineering AI Productivity',
+            'Workflows for Daily Life & Work',
+            'Which AI Tool to Use & When (ChatGPT, Gemini, Claude, Grok, etc.)',
+            'Free vs Paid AI Tools — What Actually Matters',
+            'AI Hygiene, Privacy & Guardrails',
+            'NotebookLM & AI Knowledge Tools',
+            'Open Source AI vs Closed AI — Simple Understanding',
+            'AI Agents vs Agentic AI — What\'s the Difference?',
+            'Real-Life Use Cases Across Students, Teachers, Businesses & Working Professionals',
+        ],
     },
     {
         id: 'track-b',
@@ -787,6 +833,19 @@ const PLANS = [
         discount: '50% OFF',
         color: '#10B981',
         isCombo: false,
+        features: [
+            'Introduction to Vibe Coding',
+            'Building Apps Without Traditional Coding',
+            'GitHub, Vercel, Supabase & Firebase',
+            'Frontend + Backend Development Using AI',
+            'Full Stack Development Without Prior Coding Experience',
+            'GitHub Actions & Workflow Automation',
+            'AI-Powered Web & Mobile App Development',
+            'Serverless Deployment Made Simple',
+            'Real Project Building from Idea to Deployment',
+            'Connecting AI Models, APIs & Databases',
+            'Launching SaaS Products & AI Tools Quickly',
+        ],
     },
     {
         id: 'track-c',
@@ -799,6 +858,19 @@ const PLANS = [
         discount: '50% OFF',
         color: '#F59E0B',
         isCombo: false,
+        features: [
+            'API Integrations, API Keys & Unlimited AI Workflows',
+            'Advanced Automation Systems Using AI',
+            'Coding AI Agents (Copilot, Devin AI, Claude, etc.)',
+            'Privacy-First & Secure AI Workflows',
+            'Creating Personal GPTs & Private AI Assistants',
+            'Creating AI Bots & Automation Workflows',
+            'Working with APIs & AI Integrations',
+            'Running AI Without Making Data Public',
+            'Cloud AI Models on Azure, AWS & Google Cloud',
+            'Open-Source AI Models (Ollama, Mistral, DeepSeek, etc.)',
+            'Local AI Setup & Self-Hosted AI Systems',
+        ],
     },
     {
         id: 'combo',
@@ -811,6 +883,12 @@ const PLANS = [
         discount: '55% OFF',
         color: '#6366F1',
         isCombo: true,
+        features: [
+            'All 3 Tracks — Complete Access',
+            '24+ Days of Total Learning',
+            'Real Projects — Hands-on Learning',
+            'Lifetime Access — Learn at Your Pace',
+        ],
     },
 ];
 
@@ -867,6 +945,11 @@ function renderPlans() {
                    '<span class="plan-price">₹' + plan.price.toLocaleString('en-IN') + '</span>' +
                    '<span class="plan-badge">' + plan.discount + '</span>' +
                '</div>' +
+
+               '<hr class="plan-divider">' +
+               '<ul class="plan-features">' +
+                   plan.features.map(function(f) { return '<li>' + f + '</li>'; }).join('') +
+               '</ul>' +
 
                '</div>';
     }).join('');
