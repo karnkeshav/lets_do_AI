@@ -1361,18 +1361,17 @@ function saveToSheets(data) {
 
     return fetch(GOOGLE_SHEET_URL, {
         method: 'POST',
+        mode: 'no-cors',
         headers: {
             'Content-Type': 'application/json',
         },
         body: JSON.stringify(data),
     })
-    .then(res => res.text())
-    .then(data => {
-        console.log('Sheets success:', data);
+    .then(() => {
+        console.log('Request sent to Google Sheets');
     })
     .catch(err => {
-        console.error('Sheets error:', err);
-        alert('Google Sheets save failed.');
+        console.error('Fetch failed:', err);
     });
 }
 
