@@ -952,13 +952,23 @@
 ══════════════════════════════════════════════════════════════ */
 const GOOGLE_SHEET_URL = 'https://script.google.com/macros/s/AKfycbzP9iYYn4lN5WPI92cPMSsBen6owGhY1Dq90Y7v6Py0FKY1xOfGTnksJm5pkhN1zEff_Q/exec';
 
-/* ── RAZORPAY CONFIG ──────────────────────────────────────────
-   1. Sign up free at razorpay.com
-   2. Settings → API Keys → Generate Key
-   3. Copy the Key ID (starts with rzp_test_ or rzp_live_)
-   4. Paste it below — no server needed, just the Key ID
-──────────────────────────────────────────────────────────── */
+/* ── RAZORPAY CONFIG ─────────────────────────────────────────── */
 const RAZORPAY_KEY_ID = 'rzp_live_Sgca2xHP1HPbqf';
+
+/* ── GITHUB CSV CONFIG ────────────────────────────────────────
+   Saves one CSV per day under registrations/YYYY-MM-DD.csv
+   in your GitHub repo. Rows are appended on every registration.
+
+   HOW TO CREATE THE TOKEN (2 minutes):
+   1. GitHub → Settings → Developer settings
+      → Personal access tokens → Fine-grained tokens
+      → Generate new token
+   2. Repository access: Only select repositories → lets_do_AI
+   3. Permissions → Contents → Read and Write
+   4. Generate → copy the token → paste below
+──────────────────────────────────────────────────────────── */
+const GITHUB_TOKEN = 'YOUR_GITHUB_FINE_GRAINED_PAT';
+const GITHUB_REPO  = 'karnkeshav/lets_do_AI';
 
 
 /* ══════════════════════════════════════════════════════════════
@@ -1321,6 +1331,9 @@ function openRazorpayCheckout() {
             saveToSheets(payload).catch(function(err) {
                 console.error('Sheets:', err);
             });
+            saveToGitHub(payload).catch(function(err) {
+                console.error('GitHub:', err);
+            });
 
             renderThankYouPage();
             goToStep(6);
@@ -1349,25 +1362,93 @@ function openRazorpayCheckout() {
 
 /* ══════════════════════════════════════════════════════════════
    GOOGLE SHEETS SAVE
-   Uses no-cors so the request is sent without reading response —
-   Apps Script records the row regardless. Move to Thank You
-   optimistically after the fetch completes.
+   Uses GET + query params so the data survives the 302 redirect
+   that Apps Script issues. POST bodies are silently dropped on
+   that redirect; GET params are part of the URL and survive.
 ══════════════════════════════════════════════════════════════ */
 function saveToSheets(data) {
     if (!GOOGLE_SHEET_URL || GOOGLE_SHEET_URL === 'YOUR_APPS_SCRIPT_DEPLOYMENT_URL_HERE') {
         console.warn('Google Sheets URL not set.');
         return Promise.resolve();
     }
+    return fetch(GOOGLE_SHEET_URL + '?' + new URLSearchParams(data), { mode: 'no-cors' });
+}
 
-    // URLSearchParams sets Content-Type to application/x-www-form-urlencoded,
-    // which is the ONLY content-type allowed in no-cors mode.
-    // Sending application/json in no-cors throws a TypeError and the request
-    // never leaves the browser — that was the bug.
-    return fetch(GOOGLE_SHEET_URL, {
-        method: 'POST',
-        mode:   'no-cors',
-        body:   new URLSearchParams(data),
-    });
+
+/* ══════════════════════════════════════════════════════════════
+   GITHUB CSV SAVE
+   Creates / appends registrations/YYYY-MM-DD.csv (IST date)
+   in the GitHub repo. One file per day, one row per registration.
+   Requires a fine-grained PAT with Contents: Read + Write on
+   the lets_do_AI repo — paste it into GITHUB_TOKEN above.
+══════════════════════════════════════════════════════════════ */
+async function saveToGitHub(data) {
+    if (!GITHUB_TOKEN || GITHUB_TOKEN === 'YOUR_GITHUB_FINE_GRAINED_PAT') {
+        console.warn('GitHub token not set — skipping CSV save.');
+        return;
+    }
+
+    var today = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' }); // YYYY-MM-DD
+    var path  = 'registrations/' + today + '.csv';
+    var url   = 'https://api.github.com/repos/' + GITHUB_REPO + '/contents/' + path;
+    var hdrs  = {
+        'Authorization': 'Bearer ' + GITHUB_TOKEN,
+        'Accept':        'application/vnd.github+json',
+        'Content-Type':  'application/json',
+        'X-GitHub-Api-Version': '2022-11-28',
+    };
+
+    /* Step 1 — fetch existing file (to get sha + current content) */
+    var sha = '', existingCsv = '';
+    try {
+        var getRes = await fetch(url, { headers: hdrs });
+        if (getRes.ok) {
+            var fileData = await getRes.json();
+            sha = fileData.sha;
+            // GitHub returns base64 with newlines — strip them before decoding
+            existingCsv = decodeURIComponent(escape(atob(fileData.content.replace(/\n/g, ''))));
+        }
+    } catch (e) { /* file doesn't exist yet — that's fine */ }
+
+    /* Step 2 — build the new CSV row */
+    function csvCell(v) { return '"' + String(v || '').replace(/"/g, '""') + '"'; }
+
+    var newRow = [
+        new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }),
+        data.name,
+        data.email,
+        data.phone,
+        data.plan,
+        data.batch,
+        data.amount,
+        data.payment_id,
+    ].map(csvCell).join(',');
+
+    var HEADER = '"Timestamp (IST)","Name","Email","Phone","Plan","Batch","Amount (INR)","Razorpay Payment ID"';
+    var csv    = (existingCsv || HEADER + '\n') + newRow + '\n';
+
+    /* Step 3 — PUT (create or update) the file */
+    var putBody = {
+        message: 'reg: ' + (data.name || 'unknown') + ' | ' + today,
+        content: btoa(unescape(encodeURIComponent(csv))),  // Unicode-safe base64
+    };
+    if (sha) putBody.sha = sha;  // required when updating an existing file
+
+    try {
+        var putRes = await fetch(url, {
+            method:  'PUT',
+            headers: hdrs,
+            body:    JSON.stringify(putBody),
+        });
+        if (!putRes.ok) {
+            var errText = await putRes.text();
+            console.error('GitHub PUT failed (' + putRes.status + '):', errText);
+        } else {
+            console.log('Registration saved to GitHub:', path);
+        }
+    } catch (e) {
+        console.error('GitHub save error:', e);
+    }
 }
 
 /* ══════════════════════════════════════════════════════════════

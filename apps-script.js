@@ -189,9 +189,89 @@ function sendWhatsAppMessage(toPhone, data) {
 }
 
 
-/* Health-check — visit the URL in a browser to confirm the script is live */
+/* ── GET handler ────────────────────────────────────────────────────────────
+   With query params → save registration (called from the frontend via fetch
+   in no-cors mode, which follows the POST→302→GET redirect transparently).
+   Without params    → health-check response for browser verification.
+────────────────────────────────────────────────────────────────────────── */
 function doGet(e) {
-    return ContentService.createTextOutput(
-        'AI Workshop registration endpoint is active. POST registrations here.'
-    );
+    /* Health-check: no meaningful params present */
+    if (!e || !e.parameter || !e.parameter.name) {
+        return ContentService.createTextOutput(
+            'AI Workshop registration endpoint is active. Registrations are saved here.'
+        );
+    }
+
+    try {
+        var ss    = SpreadsheetApp.getActiveSpreadsheet();
+        var sheet = ss.getSheetByName(SHEET_NAME);
+
+        /* Create the sheet + header row the first time */
+        if (!sheet) {
+            sheet = ss.insertSheet(SHEET_NAME);
+            var headerRange = sheet.getRange(1, 1, 1, HEADERS.length);
+            headerRange.setValues([HEADERS]);
+            headerRange.setFontWeight('bold');
+            headerRange.setBackground('#1a1a2e');
+            headerRange.setFontColor('#ffffff');
+            sheet.setFrozenRows(1);
+            sheet.setColumnWidth(1, 160);
+            sheet.setColumnWidth(3, 200);
+            sheet.setColumnWidth(5, 280);
+            sheet.setColumnWidth(6, 220);
+            sheet.setColumnWidth(8, 200);
+        }
+
+        var data = {
+            name:       e.parameter.name       || '',
+            email:      e.parameter.email      || '',
+            phone:      e.parameter.phone      || '',
+            plan:       e.parameter.plan       || '',
+            batch:      e.parameter.batch      || '',
+            amount:     e.parameter.amount     || '',
+            payment_id: e.parameter.payment_id || '',
+            timestamp:  e.parameter.timestamp  || '',
+        };
+
+        var timestamp = Utilities.formatDate(
+            new Date(),
+            'Asia/Kolkata',
+            'dd-MM-yyyy HH:mm:ss'
+        );
+
+        sheet.appendRow([
+            timestamp,
+            data.name,
+            data.email,
+            data.phone,
+            data.plan,
+            data.batch,
+            data.amount,
+            data.payment_id,
+            'Payment Confirmed',
+        ]);
+
+        /* Alternate row shading */
+        var lastRow  = sheet.getLastRow();
+        var rowRange = sheet.getRange(lastRow, 1, 1, HEADERS.length);
+        if (lastRow % 2 === 0) {
+            rowRange.setBackground('#0f0f1e');
+            rowRange.setFontColor('#e5e7eb');
+        } else {
+            rowRange.setBackground('#06060f');
+            rowRange.setFontColor('#e5e7eb');
+        }
+
+        /* Send WhatsApp confirmation to the customer */
+        sendWhatsAppMessage(data.phone, data);
+
+        return ContentService
+            .createTextOutput(JSON.stringify({ success: true, row: lastRow }))
+            .setMimeType(ContentService.MimeType.JSON);
+
+    } catch (err) {
+        return ContentService
+            .createTextOutput(JSON.stringify({ success: false, error: err.toString() }))
+            .setMimeType(ContentService.MimeType.JSON);
+    }
 }
